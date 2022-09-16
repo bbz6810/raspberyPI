@@ -4,7 +4,7 @@
 
 import wave
 import difflib
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -52,3 +52,50 @@ def get_edit_distance(str1, str2):
         elif tag == 'delete':
             leven_cost += (index2 - index1)
     return leven_cost
+
+
+def get_symbol_dict(dict_filename):
+    '''
+    读取拼音汉字的字典文件
+    返回读取后的字典
+    :param dict_filename:
+    :return:
+    '''
+
+    txt_obj = open(dict_filename, 'r', encoding='utf-8')
+    txt_text = txt_obj.read()
+    txt_obj.close()
+    txt_lines = txt_text.split('\n')
+    dic_symbol = {}
+    for i in txt_lines:
+        list_symbol = []
+        if i != '':
+            txt_l = i.split('\t')
+            pinyin = txt_l[0]
+            for word in txt_l[1]:
+                list_symbol.append(word)
+            dic_symbol[pinyin] = list_symbol
+    return dic_symbol
+
+
+def get_language_model(model_language_filename):
+    '''
+    读取语言模型文件
+    返回读取后的模型
+    :param model_language_filename:
+    :return:
+    '''
+
+    txt_obj = open(model_language_filename, 'r', encoding='utf-8')
+    txt_text = txt_obj.read()
+    txt_obj.close()
+    txt_lines = txt_text.split('\n')
+
+    dic_model = {}
+    for i in txt_lines:
+        if i != '':
+            txt_l = i.split('\t')
+            if len(txt_l) == 1:
+                continue
+            dic_model[txt_l[0]] = txt_l[1]
+    return dic_model

@@ -111,5 +111,98 @@ class ModelSpeech:
         self.speech_model.load_weights(filename)
 
     def save_model(self, filename):
-        pass
+        self.speech_model.save_weights(filename)
 
+    def evaluate_model(self, data_loader, data_count=-1, out_report=False, show_ratio=True, show_per_step=100):
+        '''
+        评估模型识别效果
+        :param data_loader:
+        :param data_count:
+        :param out_report:
+        :param show_ratio:
+        :param show_per_step:
+        :return:
+        '''
+
+        data_nums = data_loader.get_data_count()
+        if data_count <= 0 or data_count > data_nums:
+            data_count = data_nums
+
+        try:
+            ran_num = random.randint(0, data_nums - 1)
+            words_num = 0
+            word_error_num = 0
+
+            nowtime = time.strftime('%Y%m%d_%H%M%S')
+            if out_report:
+                txt_obj = open('Test_Reporr_' + data_loader.dataset_type + '_' + nowtime + '.txt', 'w',
+                               encoding='utf-8')
+                txt_obj.truncate((data_count + 1) * 300)
+                txt_obj.seek(0)
+
+            txt = ''
+            i = 0
+            while i < data_count:
+                wavdata, fs, data_labels = data_loader.get_data((ran_num + i) % data_nums)
+                data_input = self.speech_features.run(wavdata, fs)
+                data_input = data_input.reshape(data_input.shape[0], data_input.shape[1], 1)
+                if data_input.shape[0] > self.speech_model.input_shape[0]:
+                    print('wave data length error')
+                    continue
+
+                pre = self.predict(data_input)
+
+                words_n = data_labels.shape[0]
+                words_num += words_n
+                edit_distance = get_edit_distance(data_labels, pre)
+                if edit_distance <= words_n:
+                    word_error_num += edit_distance
+                else:
+                    word_error_num += words_n
+
+                if i % show_per_step == 0 and show_ratio:
+                    print('asrt testing: {}/{}'.format(i, data_count))
+
+                txt = ''
+                if out_report:
+                    txt += str(i) + '\n'
+                    txt += 'true:\t' + str(data_labels) + '\n'
+                    txt += 'pred:\t' + str(pre) + '\n'
+                    txt += '\n'
+                    txt_obj.write(txt)
+
+                i += 1
+
+            print(
+                'asrt test result speech recognition ' + data_loader.dataset_type + ' set word error ratio: ' + word_error_num / words_num * 100,
+                '%')
+            if out_report:
+                txt = 'asrt test result speech recognition ' + data_loader.dataset_type + ' set word error ratio: ' + word_error_num / words_num * 100, '%'
+                txt_obj.write(txt)
+                txt_obj.truncate()
+                txt_obj.close()
+        except StopIteration as e:
+            print('[asrt error] model testing raise a error ')
+
+    def predict(self, data_input):
+        return self.speech_model.forward(data_input)
+
+    def recognize_speech(self, wavsignal, fs):
+        data_input = self.speech_features.run(wavsignal, fs)
+        data_input = np.array(data_input, dtype=np.float)
+        data_input = data_input.reshape(data_input.shape[0], data_input.shape[1], 1)
+        r1 = self.predict(data_input)
+        list_symbol_dic, _ = load_pinyin_dict(load_config_file(DEFAULT_CONFIG_FILENAME)['dict_filename'])
+        r_str = []
+        for i in r1:
+            r_str.append(list_symbol_dic[i])
+        return r_str
+
+    def recognize_speech_from_file(self, filename):
+        wavsignal, sample_rate, _, _ = read_wav_data(filename)
+        r = self.recognize_speech(wavsignal, sample_rate)
+        return r
+
+    @property
+    def model(self):
+        return self.trained_model

@@ -84,7 +84,7 @@ class SpeechModel251BN(BaseModel):
         layer_h = Conv2D(32, (3, 3), use_bias=True, padding='same', kernel_initializer='he_normal', name='Conv0')(
             input_data)
         layer_h = BatchNormalization(epsilon=0.0002, name='BN0')(layer_h)
-        layer_h = Activation('relu', name='Act0')
+        layer_h = Activation('relu', name='Act0')(layer_h)
 
         layer_h = Conv2D(32, (3, 3), use_bias=True, padding='same', kernel_initializer='he_normal', name='Conv1')(
             layer_h)
@@ -127,7 +127,7 @@ class SpeechModel251BN(BaseModel):
         layer_h = BatchNormalization(epsilon=0.0002, name='BN7')(layer_h)
         layer_h = Activation('relu', name='Act7')(layer_h)
 
-        layer_h = MaxPooling2D(pool_size=2, strides=None, padding='valid', name='Pool7')(layer_h)
+        layer_h = MaxPooling2D(pool_size=1, strides=None, padding='valid', name='Pool7')(layer_h)
 
         layer_h = Conv2D(128, (3, 3), use_bias=True, padding='same', kernel_initializer='he_normal', name='Conv8')(
             layer_h)
@@ -139,9 +139,9 @@ class SpeechModel251BN(BaseModel):
         layer_h = BatchNormalization(epsilon=0.0002, name='BN9')(layer_h)
         layer_h = Activation('relu', name='Act9')(layer_h)
 
-        layer_h = MaxPooling2D(pool_size=2, strides=None, padding='valid', name='Pool9')(layer_h)
+        layer_h = MaxPooling2D(pool_size=1, strides=None, padding='valid', name='Pool9')(layer_h)
 
-        layer_h = Reshape((self.output_shape[0], input_shape[1] // self._pool_size * 128), name='Reshape0n')(layer_h)
+        layer_h = Reshape((self.output_shape[0], input_shape[1] // self._pool_size * 128), name='Reshape0')(layer_h)
 
         layer_h = Dense(128, activation='relu', use_bias=True, kernel_initializer='he_normal', name='Dense0')(layer_h)
 
